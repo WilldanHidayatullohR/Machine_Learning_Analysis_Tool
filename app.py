@@ -117,175 +117,169 @@ if len(feature_cols) == 0:
 
 st.success(f"Target yang dipilih: {target_col}. Jumlah fitur yang digunakan dalam model: {len(feature_cols)}.")
 
-# ===== TABS UNTUK ALUR ANALISIS =====
-tab_data, tab_stat, tab_model, tab_insight = st.tabs(
-    ["Data & Ringkasan", "Statistik & Visualisasi", "Model Prediksi", "Insight Otomatis"]
+
+# ==== 4. STATISTIK & VISUALISASI ====
+st.markdown("### 4. Statistik & Visualisasi")
+
+tab_bar, tab_box, tab_corr, tab_scatter, tab_radar = st.tabs(
+    ["Rata-rata Fitur", "Sebaran (Boxplot)", "Korelasi", "Scatter Plot", "Radar Aspek"]
 )
 
-# ===== TAB 1: DATA & RINGKASAN =====
-with tab_data:
-    st.write("### Ringkasan Statistik Dasar (Kolom Numerik)")
-    st.dataframe(df[numeric_cols].describe().T)
-
-    st.write("### Distribusi Nilai Target")
-    fig_t, ax_t = plt.subplots(figsize=(6, 3))
-    df[target_col].hist(bins=5, ax=ax_t)
-    ax_t.set_xlabel(f"Nilai {target_col}")
-    ax_t.set_ylabel("Frekuensi")
-    ax_t.set_title(f"Distribusi {target_col}")
-    plt.tight_layout()
-    st.pyplot(fig_t)
-
-# ===== TAB 2: STATISTIK & VISUALISASI =====
-with tab_stat:
-    st.write("### Rata-rata Skor per Fitur")
+# -------------------------------------------------
+# TAB 1: BAR CHART RATA-RATA PER FITUR + INSIGHT
+# -------------------------------------------------
+with tab_bar:
+    st.subheader("Rata-rata Skor per Fitur")
 
     mean_scores = df[feature_cols].mean().sort_values(ascending=False)
 
-    fig_m, ax_m = plt.subplots(figsize=(8, 4))
-    mean_scores.plot(kind="bar", ax=ax_m)
-    ax_m.set_ylabel("Rata-rata Skor")
-    ax_m.set_xlabel("Fitur")
-    ax_m.set_title("Rata-rata Skor Fitur")
+    fig_bar, ax_bar = plt.subplots(figsize=(8, 4))
+    mean_scores.plot(kind="bar", ax=ax_bar)
+    ax_bar.set_ylabel("Rata-rata Skor")
+    ax_bar.set_xlabel("Fitur")
+    ax_bar.set_title("Rata-rata Skor Fitur")
     plt.xticks(rotation=45, ha="right")
     plt.tight_layout()
-    st.pyplot(fig_m)
+    st.pyplot(fig_bar)
 
-    # Korelasi fitur dengan target
-    st.write("### Korelasi Fitur dengan Target")
-    corr_with_target = df[feature_cols + [target_col]].corr()[target_col].drop(target_col)
-    corr_sorted = corr_with_target.sort_values(ascending=False)
+    st.markdown("**Ringkasan:**")
+    top3 = mean_scores.head(3)
+    bottom3 = mean_scores.tail(3)
 
-    fig_c, ax_c = plt.subplots(figsize=(6, 4))
-    ax_c.barh(corr_sorted.index, corr_sorted.values)
-    ax_c.set_xlabel("Koefisien Korelasi")
-    ax_c.set_title("Korelasi Fitur terhadap Target")
-    ax_c.invert_yaxis()
-    plt.tight_layout()
-    st.pyplot(fig_c)
+    st.write("Aspek dengan rata-rata skor **tertinggi**:")
+    for idx, val in top3.items():
+        st.write(f"- **{idx}** (rata-rata: {val:.2f})")
 
-    # Heatmap korelasi sederhana (jika fitur tidak terlalu banyak)
-    if len(feature_cols) <= 25:
-        st.write("### Heatmap Korelasi (Fitur dan Target)")
-        corr_matrix = df[feature_cols + [target_col]].corr()
+    st.write("Aspek dengan rata-rata skor **terendah**:")
+    for idx, val in bottom3.items():
+        st.write(f"- **{idx}** (rata-rata: {val:.2f})")
 
-        fig_h, ax_h = plt.subplots(figsize=(6, 5))
-        cax = ax_h.imshow(corr_matrix, cmap="coolwarm", vmin=-1, vmax=1)
-        ax_h.set_xticks(range(len(corr_matrix.columns)))
-        ax_h.set_yticks(range(len(corr_matrix.index)))
-        ax_h.set_xticklabels(corr_matrix.columns, rotation=45, ha="right")
-        ax_h.set_yticklabels(corr_matrix.index)
-        fig_h.colorbar(cax)
-        plt.tight_layout()
-        st.pyplot(fig_h)
-
-# ===== TAB 3: MODEL PREDIKSI =====
-with tab_model:
-    st.write("### Pembangunan Model Prediksi")
-
-    X = df[feature_cols]
-    y = df[target_col]
-
-    # Bagi data
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
+    st.caption(
+        "Nilai rata-rata tinggi menunjukkan area yang sudah berjalan baik dan dapat dipertahankan. "
+        "Sebaliknya, rata-rata rendah dapat menjadi kandidat prioritas perbaikan."
     )
 
-    # Model 1: Linear Regression (baseline)
-    lin_reg = LinearRegression()
-    lin_reg.fit(X_train, y_train)
-    y_pred_lin = lin_reg.predict(X_test)
-    r2_lin = r2_score(y_test, y_pred_lin)
-    rmse_lin = hitung_rmse(y_test, y_pred_lin)
+# -------------------------------------------------
+# TAB 2: BOXPLOT – SEBARAN NILAI PER FITUR
+# -------------------------------------------------
+with tab_box:
+    st.subheader("Sebaran Skor per Fitur (Boxplot)")
 
-    # Model 2: Random Forest Regressor
-    rf_model = RandomForestRegressor(
-        n_estimators=200,
-        random_state=42,
-        n_jobs=-1
-    )
-    rf_model.fit(X_train, y_train)
-    y_pred_rf = rf_model.predict(X_test)
-    r2_rf = r2_score(y_test, y_pred_rf)
-    rmse_rf = hitung_rmse(y_test, y_pred_rf)
-
-    col_m1, col_m2 = st.columns(2)
-    with col_m1:
-        st.write("Hasil Evaluasi Linear Regression:")
-        st.write(f"R²: {r2_lin:.3f}")
-        st.write(f"RMSE: {rmse_lin:.3f}")
-    with col_m2:
-        st.write("Hasil Evaluasi Random Forest:")
-        st.write(f"R²: {r2_rf:.3f}")
-        st.write(f"RMSE: {rmse_rf:.3f}")
-
-    st.write("### Perbandingan Kinerja Model")
-
-    perf_df = pd.DataFrame({
-        "Model": ["Linear Regression", "Random Forest"],
-        "R2": [r2_lin, r2_rf],
-        "RMSE": [rmse_lin, rmse_rf]
-    })
-
-    st.dataframe(perf_df)
-
-    fig_p, ax_p = plt.subplots(figsize=(6, 3))
-    ax_p.bar(perf_df["Model"], perf_df["R2"])
-    ax_p.set_ylabel("R²")
-    ax_p.set_title("Perbandingan R² Antar Model")
+    fig_box, ax_box = plt.subplots(figsize=(10, 4))
+    df[feature_cols].plot(kind="box", ax=ax_box)
+    ax_box.set_ylabel("Skor")
+    ax_box.set_title("Sebaran Skor Fitur")
+    plt.xticks(rotation=45, ha="right")
     plt.tight_layout()
-    st.pyplot(fig_p)
+    st.pyplot(fig_box)
 
-    # Feature importance dari Random Forest
-    st.write("### Pentingnya Fitur Menurut Random Forest")
-
-    importances = rf_model.feature_importances_
-    fi_series = pd.Series(importances, index=feature_cols).sort_values(ascending=True)
-
-    fig_fi, ax_fi = plt.subplots(figsize=(8, 5))
-    fi_series.plot(kind="barh", ax=ax_fi)
-    ax_fi.set_xlabel("Importance")
-    ax_fi.set_title("Pentingnya Fitur (Random Forest)")
-    plt.tight_layout()
-    st.pyplot(fig_fi)
-
-    st.write("Lima fitur paling berpengaruh menurut Random Forest:")
-    for feat, val in fi_series.sort_values(ascending=False).head(5).items():
-        st.write(f"- {feat}: importance {val:.3f}")
-
-# ===== TAB 4: INSIGHT OTOMATIS =====
-with tab_insight:
-    st.write("### Ringkasan Insight Otomatis")
-
-    mean_scores = df[feature_cols].mean()
-    top3 = mean_scores.sort_values(ascending=False).head(3)
-    bottom3 = mean_scores.sort_values(ascending=True).head(3)
-
-    st.write("Aspek dengan rata-rata skor tertinggi:")
-    for feat, val in top3.items():
-        level = klasifikasi_level_mean(val)
-        st.write(f"- {feat}: rata-rata {val:.2f} ({level})")
-
-    st.write("Aspek dengan rata-rata skor terendah:")
-    for feat, val in bottom3.items():
-        level = klasifikasi_level_mean(val)
-        st.write(f"- {feat}: rata-rata {val:.2f} ({level})")
-
-    st.markdown("---")
-
-    st.write("Interpretasi umum:")
-    st.write(
-        """
-        1. Fitur dengan skor rata-rata tinggi menunjukkan area yang sudah berjalan baik 
-           dan dapat dipertahankan kualitasnya.
-        2. Fitur dengan skor rata-rata rendah dan korelasi positif yang tinggi terhadap target 
-           menjadi prioritas utama untuk perbaikan, karena peningkatan pada aspek tersebut 
-           berpotensi berdampak langsung pada kenaikan kepuasan.
-        3. Hasil analisis model (terutama Random Forest) dapat digunakan untuk memvalidasi 
-           apakah fitur yang dianggap penting oleh pengguna juga berpengaruh signifikan 
-           secara prediktif terhadap tingkat kepuasan.
-        """
+    st.caption(
+        "Boxplot menunjukkan median, sebaran, dan potensi outlier pada setiap fitur. "
+        "Fitur dengan sebaran sangat lebar menandakan persepsi pengguna yang beragam."
     )
 
-st.markdown("---")
-st.write("Analisis selesai. Anda dapat mengganti file CSV atau kolom target untuk melakukan eksperimen lain.")
+# -------------------------------------------------
+# TAB 3: HEATMAP KORELASI
+# -------------------------------------------------
+with tab_corr:
+    st.subheader("Korelasi Antar Fitur dan Target")
+
+    # Ambil hanya fitur numerik + target
+    corr_cols = feature_cols + [target_col]
+    corr = df[corr_cols].corr()
+
+    st.write("Matriks Korelasi:")
+    st.dataframe(corr.style.background_gradient(cmap="coolwarm"))
+
+    fig_corr, ax_corr = plt.subplots(figsize=(6, 5))
+    cax = ax_corr.imshow(corr, interpolation="nearest", cmap="coolwarm")
+    ax_corr.set_xticks(range(len(corr_cols)))
+    ax_corr.set_yticks(range(len(corr_cols)))
+    ax_corr.set_xticklabels(corr_cols, rotation=45, ha="right")
+    ax_corr.set_yticklabels(corr_cols)
+    fig_corr.colorbar(cax)
+    ax_corr.set_title("Heatmap Korelasi")
+    plt.tight_layout()
+    st.pyplot(fig_corr)
+
+    st.caption(
+        "Nilai korelasi mendekati 1 atau -1 menunjukkan hubungan yang kuat. "
+        "Perhatikan fitur dengan korelasi tinggi terhadap target kepuasan."
+    )
+
+# -------------------------------------------------
+# TAB 4: SCATTER PLOT FITUR vs TARGET
+# -------------------------------------------------
+with tab_scatter:
+    st.subheader("Scatter Plot Fitur vs Target")
+
+    selected_feature = st.selectbox(
+        "Pilih satu fitur untuk dibandingkan dengan target:",
+        options=feature_cols,
+        index=0
+    )
+
+    fig_scatter, ax_scatter = plt.subplots(figsize=(6, 4))
+    ax_scatter.scatter(df[selected_feature], df[target_col], alpha=0.7)
+    ax_scatter.set_xlabel(selected_feature)
+    ax_scatter.set_ylabel(target_col)
+    ax_scatter.set_title(f"{selected_feature} vs {target_col}")
+    plt.tight_layout()
+    st.pyplot(fig_scatter)
+
+    st.caption(
+        "Scatter plot membantu melihat pola: apakah kenaikan nilai pada fitur "
+        "tersebut cenderung diikuti oleh kenaikan nilai target kepuasan."
+    )
+
+# -------------------------------------------------
+# TAB 5: RADAR CHART PER ASPEK
+# -------------------------------------------------
+with tab_radar:
+    st.subheader("Profil Aspek Kepuasan (Radar Chart)")
+
+    # Mapping grup aspek → prefix kolom
+    aspect_groups = {
+        "System Quality": ["SQ1", "SQ2", "SQ3", "SQ4"],
+        "Information Quality": ["IQ1", "IQ2", "IQ3", "IQ4"],
+        "Service Quality": ["SVQ1", "SVQ2", "SVQ3", "SVQ4"],
+        "User Experience": ["UX1", "UX2", "UX3", "UX4"],
+        "Expected Satisfaction": ["ES1", "ES2", "ES3", "ES4"],
+    }
+
+    aspect_labels = []
+    aspect_means = []
+
+    for aspect_name, cols in aspect_groups.items():
+        # Hanya ambil kolom yang benar-benar ada di data
+        valid_cols = [c for c in cols if c in df.columns]
+        if len(valid_cols) == 0:
+            continue
+        aspect_labels.append(aspect_name)
+        aspect_means.append(df[valid_cols].mean().mean())
+
+    if len(aspect_labels) < 3:
+        st.info(
+            "Radar chart membutuhkan minimal beberapa kelompok aspek. "
+            "Pastikan nama kolom mengikuti pola: SQ1–SQ4, IQ1–IQ4, SVQ1–SVQ4, UX1–UX4, ES1–ES4."
+        )
+    else:
+        # Siapkan data untuk radar
+        angles = np.linspace(0, 2 * np.pi, len(aspect_labels), endpoint=False)
+        values = np.array(aspect_means)
+        # Tutup kembali ke titik pertama
+        values = np.concatenate((values, [values[0]]))
+        angles = np.concatenate((angles, [angles[0]]))
+
+        fig_rad, ax_rad = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
+        ax_rad.plot(angles, values, "o-", linewidth=2)
+        ax_rad.fill(angles, values, alpha=0.25)
+        ax_rad.set_thetagrids(angles[:-1] * 180 / np.pi, aspect_labels)
+        ax_rad.set_title("Profil Rata-rata per Aspek", pad=20)
+        ax_rad.set_ylim(1, 5)  # asumsi skala Likert 1–5
+        st.pyplot(fig_rad)
+
+        st.caption(
+            "Radar chart memperlihatkan profil kekuatan dan kelemahan tiap aspek. "
+            "Aspek dengan nilai rata-rata lebih tinggi menunjukkan area yang relatif lebih kuat."
+        )
