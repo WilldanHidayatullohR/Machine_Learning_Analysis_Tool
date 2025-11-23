@@ -35,12 +35,12 @@ with st.sidebar:
     col_logo1, col_logo2 = st.columns(2)
     with col_logo1:
         try:
-            st.image("assets/Logo_Unsap.png", use_column_width=True)
+            st.image("assets/Logo_Unsap.png", width=80)
         except Exception:
             st.write("Logo UNSAP")
     with col_logo2:
         try:
-            st.image("assets/Logo_Fti.png", use_column_width=True)
+            st.image("assets/Logo_Fti.png", width=80)
         except Exception:
             st.write("Logo FTI")
 
@@ -55,9 +55,17 @@ with st.sidebar:
         """
     )
     st.markdown("---")
-    st.write("Pengembang: Wildan Hidayatulloh")
-    st.write("Program Studi: Informatika, FTI UNSAP")
+    st.subheader("Tentang Aplikasi")
+    st.write(
+        "Mini tool ini dikembangkan sebagai bagian dari Kerja Praktek untuk membantu "
+        "analisis data survei kepuasan secara cepat dan terstruktur."
+    )
 
+    st.subheader("Tentang Pengembang")
+    st.write("Nama   : Wildan Hidayatulloh")
+    st.write("Prodi  : Informatika – FTI UNSAP")
+    st.write("Tahun  : 2025")
+    st.write("Email  : 220660121125@student.unsap.ac.id")
 
 # =====================================================
 # FUNGSI BANTU
