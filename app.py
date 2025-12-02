@@ -50,12 +50,6 @@ with st.sidebar:
         "analisis data survei kepuasan secara cepat dan terstruktur."
     )
 
-    st.subheader("Tentang Pengembang")
-    st.write("Nama   : Wildan Hidayatulloh")
-    st.write("Prodi  : Informatika – FTI UNSAP")
-    st.write("Tahun  : 2025")
-    st.write("Email  : 220660121125@student.unsap.ac.id")
-
 # =====================================================
 # FUNGSI BANTU
 # =====================================================
