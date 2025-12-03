@@ -12,7 +12,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, mean_squared_error
 
-# Opsional: reportlab hanya digunakan jika tersedia (untuk PDF lokal)
+# Opsional: reportlab hanya digunakan jika tersedia
 try:
     from reportlab.lib.pagesizes import A4
     from reportlab.pdfgen import canvas
@@ -80,7 +80,6 @@ uploaded_file = st.file_uploader(
 )
 
 if uploaded_file is not None:
-    # Simpan ke session_state supaya tidak hilang saat rerun
     st.session_state["df"] = pd.read_csv(uploaded_file)
 
 if "df" not in st.session_state:
@@ -119,7 +118,6 @@ if len(numeric_cols) == 0:
 st.write("Kolom numerik yang terdeteksi:")
 st.write(", ".join(numeric_cols))
 
-# Coba tebak target kepuasan jika ada nama yang umum
 default_target = None
 for cand in ["Kepuasan", "Overall_Satisfaction", "Overall Satisfaction", "Avg_Satisfaction"]:
     if cand in numeric_cols:
@@ -263,7 +261,6 @@ with tab_stat:
     with tab_radar:
         st.subheader("Profil Aspek Kepuasan (Radar Chart)")
 
-        # Mapping contoh grup aspek → prefix kolom (opsional, hanya jika ada)
         aspect_groups = {
             "System Quality": ["SQ1", "SQ2", "SQ3", "SQ4"],
             "Information Quality": ["IQ1", "IQ2", "IQ3", "IQ4"],
@@ -452,7 +449,7 @@ with tab_analisis:
         if (mean_scores.max() - mean_scores.min()) > 0:
             mean_norm = (mean_scores - mean_scores.min()) / (mean_scores.max() - mean_scores.min())
         else:
-            mean_norm = mean_scores - mean_scores  # semua nol jika datanya konstan
+            mean_norm = mean_scores - mean_scores 
 
         corr_abs = corr_with_target.abs()
         priority_score = (1 - mean_norm) * corr_abs
@@ -476,7 +473,7 @@ with tab_analisis:
 
         st.markdown("---")
 
-        # 4) Evaluasi singkat model (refit ringan untuk insight naratif)
+        # 4) Evaluasi singkat model
         st.write("Evaluasi Singkat Model (Random Forest) untuk Ringkasan:")
 
         X = df[feature_cols]
@@ -515,7 +512,7 @@ with tab_analisis:
 
         st.markdown("---")
 
-        # 5) Ringkasan naratif (siap copas)
+        # 5) Ringkasan naratif
         st.subheader("Ringkasan Naratif (Siap Digunakan di Laporan)")
 
         best_feat = top_corr.index[0] if len(top_corr) > 0 else None
@@ -550,7 +547,7 @@ with tab_analisis:
 
         st.markdown("---")
 
-        # 6) Export PDF (jika reportlab tersedia)
+        # 6) Export PDF
         st.subheader("Export Laporan ke PDF")
 
         if not REPORTLAB_AVAILABLE:
